@@ -1,0 +1,603 @@
+\documentclass{article}
+\usepackage[]{algorithm2e}
+\usepackage{fullpage}
+\usepackage{color}
+\usepackage{amsmath}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{parskip}
+\usepackage{amssymb}
+\usepackage{listings}  % for displaying code
+\usepackage{xcolor}
+\usepackage{pythonhighlight}
+\usepackage[hidelinks]{hyperref}
+
+% general
+\newcommand{\ans}[1]{\green{Answer: #1}}
+\newcommand{\rubric}[1]{\green{Rubric: #1}}
+
+% colors
+\definecolor{blue}{rgb}{0,0,1}
+\newcommand{\blue}[1]{{\color{blue}#1}}
+\definecolor{green}{rgb}{0,0.5,0}
+\newcommand{\green}[1]{{\color{green}#1}}
+\definecolor{red}{rgb}{1,0,0}
+\newcommand{\red}[1]{{\color{red}#1}}
+
+% math
+\newcommand{\norm}[1]{\|#1\|}
+\newcommand{\R}{\mathbb{R}}
+\DeclareMathOperator*\argmax{arg\,max}
+\DeclareMathOperator*\argmin{arg\,min}
+\newcommand{\mat}[1]{\begin{bmatrix}#1\end{bmatrix}}
+\newcommand{\aligns}[1]{\begin{align*}#1\end{align*}}
+\newcommand{\half}{\frac{1}{2}}
+
+% latex
+\newcommand{\fig}[2]{\includegraphics[width=#1\textwidth]{#2}}
+\newcommand{\centerfig}[2]{\begin{center}\includegraphics[width=#1\textwidth]{#2}\end{center}}
+
+
+\begin{document}
+    \title{CPSC 340 Assignment 1}
+    \author{Pedram Amani -- 7399 3008}
+    \date{}
+    \maketitle
+
+    \textbf{Commentary on Assignment 1}: CPSC 340 is tough because it combines knowledge and skills across several disciplines. To succeed in the course, you will need to know or very quickly get up to speed on:
+
+    \items{
+        \item Basic Python programming, including NumPy and plotting with matplotlib.
+        \item Math to the level of the course prerequisites: linear algebra, multivariable calculus, some probability.
+        \item Statistics, algorithms and data structures to the level of the course prerequisites.
+        \item Some basic LaTeX skills so that you can typeset equations and submit your assignments.
+    }
+
+    This assignment will help you assess whether you are prepared for this course. We anticipate that each of you will have different strengths and weaknesses, so don't be worried if you struggle with \emph{some} aspects of the assignment. \textbf{But if you find this assignment to be very difficult overall, that is a warning sign that you may not be prepared to take CPSC 340 at this time.} Future assignments will be more difficult than this one (and probably around the same length).
+
+    Questions 1--4 are on review material, that we expect you to know coming into the course. The rest is new CPSC 340 material from the first few lectures.
+
+    \textbf{A note on the provided code:} in the \texttt{code} directory we provide you with a file called \texttt{main.py}. This file, when run with different arguments, runs the code for different parts of the assignment. For example,
+
+    \begin{verbatim}
+        python main.py -q 6.2
+    \end{verbatim}
+
+    runs the code for Question 6.2. At present, this should do nothing (throws a \texttt{NotImplementedError}), because the code for Question 6.2 still needs to be written (by you). But we do provide some of the bits and pieces to save you time, so that you can focus on the machine learning aspects. For example, you'll see that the provided code already loads the datasets for you. The file \texttt{utils.py} contains some helper functions. You don't need to read or modify the code in there. To complete your assignment, you will need to modify \texttt{grads.py}, \texttt{main.py}, \texttt{decision\string_stump.py} and \texttt{simple\string_decision.py} (which you'll need to create).
+
+
+    \section*{Instructions}
+    \rubric{5}
+
+    The above points are allocated for following the submission instructions:\\
+    \url{https://github.com/UBC-CS/cpsc340-2021w1/blob/main/docs/submissionInstructions.pdf}
+
+    \vspace{1em}
+    We use \blue{blue} to highlight the deliverables that you must answer/do/submit with the assignment.
+
+    \section{Linear Algebra Review}
+    For these questions you may find it helpful to review these notes on linear algebra:\\
+    \url{http://www.cs.ubc.ca/~schmidtm/Documents/2009_Notes_LinearAlgebra.pdf}
+
+    \subsection{Basic Operations}
+    \rubric{7}
+
+    Use the definitions below,
+    \[
+    \alpha = 2,\quad
+    x = \left[\begin{array}{c}
+        0\\
+        1\\
+        2\\
+    \end{array}\right], \quad
+    y = \left[\begin{array}{c}
+        3\\
+        4\\
+        5\\
+    \end{array}\right],\quad
+    z = \left[\begin{array}{c}
+        1\\
+        4\\
+        -2\\
+    \end{array}\right],\quad
+    A = \left[\begin{array}{ccc}
+        3 & 2 & 2\\
+        1 & 3 & 1\\
+        1 & 1 & 3
+    \end{array}\right],
+    \]
+    and use $x_i$ to denote element $i$ of vector $x$.
+    \blue{Evaluate the following expressions} (you do not need to show your work).
+
+    \begin{enumerate}
+        \item $\sum_{i=1}^n x_i y_i$ (inner product). \ans{14}
+        \item $\sum_{i=1}^n x_i z_i$ (inner product between orthogonal vectors). \ans{0}
+        \item $\alpha(x+z)$ (vector addition and scalar multiplication). \ans{\mat{2\\10\\0}}
+        \item $x^T z + \norm{x}$ (inner product in matrix notation and Euclidean norm of $x$). \ans{$\sqrt{5}$}
+        \item $Ax$ (matrix-vector multiplication). \ans{\mat{5\\5\\7}}
+        \item $x^T Ax$ (quadratic form). \ans{19}
+        \item $A^T A$ (matrix transpose and matrix multiplication).
+            \ans{\mat{11&10&10\\ 10&14&10\\ 10&10&14}}
+    \end{enumerate}
+
+    \subsection{Matrix Algebra Rules}
+    \rubric{10}
+
+    Assume that $\{x,y,z\}$ are $n \times 1$ column vectors, $\{A,B,C\}$ are $n \times n$ real-valued matrices, $0$ is the zero matrix of appropriate size, and $I$ is the identity matrix of appropriate size. \blue{State whether each of the below is true in general} (you do not need to show your work).
+
+    \begin{enumerate}
+        \item $x^T y = \sum_{i=1}^n x_i y_i$. \ans{T}
+        \item $x^T x = \norm{x}^2$. \ans{T}
+        \item $x^T x = xx^T$. \ans{F}
+        \item $(x-y)^T(x-y) = \norm{x}^2 - 2x^T y + \norm{y}^2$. \ans{F}
+        \item $AB=BA$. \ans{F}
+        \item $A^T(B + IC) = A^T B + A^T C$. \ans{T}
+        \item $(A + BC)^T = A^T + B^T C^T$. \ans{F}
+        \item $x^T Ay = y^T A^T x$. \ans{T}
+        \item $A^T A = AA^T$ if $A$ is a symmetric matrix. \ans{T}
+        \item $A^T A = 0$ if the columns of $A$ are orthonormal. \ans{F}
+    \end{enumerate}
+
+    \section{Probability Review}
+    For these questions you may find it helpful to review these notes on probability:\\
+    \url{http://www.cs.ubc.ca/~schmidtm/Courses/Notes/probability.pdf}
+    
+    And here are some slides giving visual representations of the ideas as well as some simple examples:\\
+    \url{http://www.cs.ubc.ca/~schmidtm/Courses/Notes/probabilitySlides.pdf}
+
+    \subsection{Rules of probability}
+    \rubric{6}
+
+    \blue{Answer the following questions.} You do not need to show your work.
+
+    \begin{enumerate}
+        \item You are offered the opportunity to play the following game: your opponent rolls 2 regular 6-sided dice. If the difference between the two rolls is at least 3, you win \$30. Otherwise, you get nothing. What is a fair price for a ticket to play this game once? In other words, what is the expected value of playing the game? \ans{\$10}
+        \item Consider two events $A$ and $B$ such that $\Pr(A \cap B)=0$ (they are mutually exclusive). If $\Pr(A) = 0.4$ and $\Pr(A \cup B) = 0.95$, what is $\Pr(B)$? Note: $\Pr(A \cap B)$ means
+        ``probability of $A$ and $B$'' while $p(A \cup B)$ means ``probability of $A$ or $B$''. It may be helpful to draw a Venn diagram. \ans{0.55}
+        \item Instead of assuming that $A$ and $B$ are mutually exclusive ($\Pr(A \cap B) = 0)$, what is the answer to the previous question if we assume that $A$ and $B$ are independent? \ans{$\frac{11}{12}$}
+    \end{enumerate}
+
+    \subsection{Bayes Rule and Conditional Probability}
+    \rubric{10}
+
+    \blue{Answer the following questions.} You do not need to show your work.
+
+    Suppose a drug test produces a positive result with probability $0.97$ for drug users, $P(T=1 \mid D=1)=0.97$. It also produces a negative result with probability $0.99$ for non-drug users, $P(T=0 \mid D=0)=0.99$. The probability that a random person uses the drug is $0.0001$, so $P(D=1)=0.0001$.
+
+    \begin{enumerate}
+        \item What is the probability that a random person would test positive, $P(T=1)$? \ans{0.010096}
+        \item In the above, do most of these positive tests come from true positives or from false positives? \ans{False positives}
+        \item What is the probability that a random person who tests positive is a user, $P(D=1 \mid T=1)$? \ans{$\approx 0.0096$}
+        \item Suppose you have given this test to a random person and it came back positive, are they likely to be a drug user? \ans{No, most likely not.}
+        \item Suppose you are the designer of this drug test. You may change how the test is conducted, which may influence factors like false positive rate, false negative rate, and the number of samples collected. What is one factor you could change to make this a more useful test? \ans{Repeat the test several times to reduce false positive rate by more than two orders of magnitude.}
+    \end{enumerate}
+
+
+    \section{Calculus Review}
+    
+    \subsection{One-variable derivatives}
+    \rubric{8}
+
+    \blue{Answer the following questions.} You do not need to show your work.
+
+    \begin{enumerate}
+        \item Find the derivative of the function $f(x) = 3x^3 -2x + 5$. \ans{$9x^2 - x$}
+        \item Find the derivative of the function $f(x) = x(1-x)$. \ans{$-2x + 1$}
+        \item Let $p(x) = \frac{1}{1+\exp(-x)}$ for $x \in \R$. Compute the derivative of the function $f(x) = x-\log(p(x))$ and simplify it by using the function $p(x)$. \ans{$p(x)\:p(-x)$}
+    \end{enumerate}
+    Remember that in this course we will take $\log(x)$ to mean the ``natural'' logarithm of $x$, so that $\log(\exp(1)) = 1$. Also, observe that $p(x) = 1-p(-x)$ for the final part.
+
+    \subsection{Multi-variable derivatives}
+    \rubric{5}
+
+    \blue{Compute the gradient vector $\nabla f(x)$ of each of the following functions.} You do not need to show your work.
+    \begin{enumerate}
+        \item $f(x) = x_1^2 + \exp(x_1 + 3x_2)$ where $x \in \R^2$.
+            \ans{\mat{2x_1 + \exp(x_1 + 3x_2)\\ 3 \exp(x_1 + 3x_2)}}
+        \item $f(x) = \log\left(\sum_{i=1}^3\exp(x_i)\right)$ where $x \in \R^3$ (simplify the gradient by defining $Z = \sum_{i=1}^3\exp(x_i)$).
+            \ans{$\frac{1}{Z}\cdot$\mat{\exp(x_1)\\ \exp(x_2)\\ \exp(x_3)}}
+        \item $f(x) = a^T x + b$ where $x \in \R^3$ and $a \in \R^3$ and $b \in \R$. \ans{$a$}
+        \item $f(x) = \half x^T A x$ where $A=\left[ \begin{array}{cc}
+            2 & -1 \\
+            -1 & 2 \end{array} \right]$ and $x \in \mathbb{R}^2$.
+            \ans{\mat{2x_1 - x_2\\ 2x_2 - x_1}}
+        \item $f(x) = \frac{1}{2}\norm{x}^2$ where $x \in \R^d$. \ans{$x$}
+    \end{enumerate}
+
+    Hint: it may be helpful to write out the linear algebra expressions in terms of summations.
+
+
+    \subsection{Optimization}
+    \rubric{6}
+
+    \blue{Find the following quantities.} You do not need to show your work.
+
+    \begin{enumerate}
+        \item $\min \, 3x^2-2x+5$, or, in words, the minimum value of the function $f(x) = 3x^2 -2x + 5$ for $x \in \R$. \ans{$\frac{14}{3}$}
+
+        \item $\max_{x \in [0, 1]} x(1-x)$ \ans{0.25}
+        \item $\min_{x \in [0, 1]} x(1-x)$ \ans{0}
+        \item $\argmax_{x \in [0, 1]} x(1-x)$ \ans{0.5}
+        \item $\min_{x \in [0, 1]^2} x_1^2 + \exp(x_2)$ -- in other words, $x_1\in [0,1]$ and $x_2\in [0,1]$ \ans{1}
+        \item $\argmin_{x \in [0, 1]^2} x_1^2 + \exp(x_2)$ \ans{\mat{0\\0}}
+    \end{enumerate}
+
+    Note: the notation $x\in [0,1]$ means ``$x$ is in the interval $[0,1]$'', or, also equivalently, $0 \leq x \leq 1$.
+
+    Note: the notation ``$\max f(x)$'' means ``the value of $f(x)$ where $f(x)$ is maximized'', whereas ``$\argmax f(x)$'' means ``the value of $x$ such that $f(x)$ is maximized''.
+    Likewise for $\min$ and $\argmin$. For example, the min of the function $f(x)=(x-1)^2$ is $0$ because the smallest possible value is $f(x)=0$,
+    whereas the arg min is $1$ because this smallest value occurs at $x=1$. The min is always a scalar but the $\argmin$ is a value of $x$, so it's a vector
+    if $x$ is vector-valued.
+
+    \subsection{Derivatives of code}
+    \rubric{4}
+
+    Your repository contains a file named \texttt{grads.py} which defines several Python functions that take in an input variable $x$, which we assume to be a 1-d array (in math terms, a vector).
+    It also includes (blank) functions that return the corresponding gradients.
+    For each function, \blue{write code that computes the gradient of the function} in Python.
+    You should do this directly in \texttt{grads.py}; no need to make a fresh copy of the file. When finished, you can run \texttt{python main.py -q 3.4} to test out your code. \blue{Include this code following the instructions in the general assignment submission instructions.}
+
+    \begin{python}
+    def foo_grad(x):
+        return 4 * x ** 3
+
+    def bar_grad(x):
+        grad = np.zeros_like(x)
+        for i, _ in enumerate(grad):
+            grad[i] = np.prod(x[0:i]) * np.prod(x[i+1:])
+        return grad
+    \end{python}
+
+    Hint: it's probably easiest to first understand on paper what the code is doing, then compute
+    the gradient, and then translate this gradient back into code.
+
+    Note: do not worry about the distinction between row vectors and column vectors here.
+    For example, if the correct answer is a vector of length 5, we'll accept numpy arrays
+    of shape \texttt{(5,)} (a 1-d array) or \texttt{(5,1)} (a column vector) or
+    \texttt{(1,5)} (a row vector). In future assignments we will start to be more careful
+    about this.
+
+    Warning: Python uses whitespace instead of curly braces to delimit blocks of code.
+    Some people use tabs and other people use spaces. My text editor (Atom) inserts 4 spaces (rather than tabs) when
+    I press the Tab key, so the file \texttt{grads.py} is indented in this manner (and indeed, this is standard Python style that you should probably also follow). If your text editor inserts tabs,
+    Python will complain and you might get mysterious errors\ldots this is one of the most annoying aspects
+    of Python, especially when starting out. So, please be aware of this issue! And if in doubt you can just manually
+    indent with 4 spaces, or convert everything to tabs. For more information
+    see \url{https://www.youtube.com/watch?v=SsoOG6ZeyUI}.
+
+
+    \section{Algorithms and Data Structures Review}
+
+    \subsection{Trees}
+    \rubric{2}
+
+    \blue{Answer the following questions.} You do not need to show your work. We'll define ``depth'' as the maximum number of edges you need to traverse to get from the root of the tree to a leaf of the tree. In other words, if you're thinking about nodes, then the leaves are not included in the depth, so a complete tree with depth $1$ has 3 nodes with 2 leaves.
+
+
+    \begin{enumerate}
+        \item What is the minimum depth of a binary tree with 64 leaf nodes? \ans{6}
+        \item What is the minimum depth of binary tree with 64 nodes (including leaves and all other nodes)? \ans{6}
+    \end{enumerate}
+
+    \subsection{Common Runtimes}
+    \rubric{5}
+
+    \blue{Answer the following questions using big-$O$ notation} You do not need to show your work.
+    Here, the word ``list'' means e.g.\ a Python \texttt{list} -- an array, not a linked list.
+    \begin{enumerate}
+        \item What is the cost of finding the largest number in an unsorted list of $n$ numbers? \ans{$O(n)$}
+        \item What is the cost of finding the smallest element greater than 0 in a \emph{sorted} list with $n$ numbers. \ans{$O(\log(n))$}
+        \item What is the cost of finding the value associated with a key in a hash table with $n$ numbers? \\(Assume the values and keys are both scalars.) \ans{$O(1)$}
+        \item What is the cost of computing the inner product $a^T x$, where $a$ is $d \times 1$ and $x$ is $d \times 1$? \ans{$O(d)$}
+        \item What is the cost of computing the quadratic form $x^T Ax$ when $A$ is $d \times d$ and $x$ is $d \times 1$? \ans{$O(d^2)$}
+    \end{enumerate}
+
+    \subsection{Running times of code}
+    \rubric{4}
+
+    Your repository contains a file named \texttt{bigO.py}, which defines several functions
+    that take an integer argument $N$. For each function, \blue{state the running time as a function of $N$, using big-O notation}.
+
+    \begin{enumerate}
+        \item \ans{$O(N)$}
+        \item \ans{$O(N)$}
+        \item \ans{$O(N)$}
+        \item \ans{$O(N^2)$}
+    \end{enumerate}
+
+    \section{Data Exploration}
+
+
+    Your repository contains the file \texttt{fluTrends.csv}, which contains estimates
+    of the influenza-like illness percentage over 52 weeks on 2005--06 by Google Flu Trends.
+    Your \texttt{main.py} loads this data for you and stores it in a pandas DataFrame \texttt{X},
+    where each row corresponds to a week and each column
+    corresponds to a different
+    region. If desired, you can convert from a DataFrame to a raw numpy array with \texttt{X.values()}.
+
+    \subsection{Summary Statistics}
+    \rubric{2}
+
+    \blue{Report the following statistics}:
+    \begin{enumerate}
+        \item The minimum, maximum, mean, median, and mode of all values across the dataset.\\
+            \ans{min = 0.352, max = 4.862, mean = 1.325, median = 1.159, mode = 0.77}
+
+        \item The $5\%$, $25\%$, $50\%$, $75\%$, and $95\%$ quantiles of all values across the dataset.\\
+            \ans{5\% = 0.465, 25\% = 0.718, 50\% = 1.16, 75\% = 1.81, 95\% = 2.62}
+        \item The names of the regions with the highest and lowest means, and the highest and lowest variances.\\
+            \ans{highest mean: WtdILI, lowest mean: Pac, highest variance: Mtn, lowest variance: Pac}
+    \end{enumerate}
+
+    In light of the above, \blue{is the mode a reliable estimate of the most ``common" value? Describe another way we could give a meaningful ``mode" measurement for this (continuous) data.} Note: the function \texttt{utils.mode()} will compute the mode value of an array for you.\\
+    \ans{No. Especially with continuous data, the most frequent value does not indicate the most common since it ignores the distance between data points. For example, in the dataset [1.1, 1.1, 5.3, 5.4, 5.5, 5.6], 1.1 is most frequent while the most common value is closer to $5.5$. A more meaningful ``mode'' can be obtained by first binning the data, then choosing the bin with highest frequency.}
+
+
+    \subsection{Data Visualization}
+    \rubric{3}
+
+    Consider the figure below.
+
+    \fig{1}{../figs/visualize-unlabeled}
+
+    The figure contains the following plots, in a shuffled order:
+    \begin{enumerate}
+        \item A single histogram showing the distribution of \emph{each} column in $X$.\\
+            \ans{D, since it is a histogram that shows distribution for each region.}
+        \item A histogram showing the distribution of each of the values in the matrix $X$.\\
+            \ans{C, since it is an overall histogram of illness percentage values irrespective of week or region.}
+        \item A boxplot grouping data by weeks, showing the distribution across regions for each week.\\
+            \ans{A, since it is a line plot that shows the evolution of illness for each region over the weeks.}
+        \item A plot showing the illness percentages over time.\\
+            \ans{B, since it shows overall illness evolution over the weeks irrespective of region.}
+        \item A scatter plot between the two regions with highest correlation.\\
+            \ans{F, since it is a scatter plot and is fairly well approximated with a line through the origin and slope of $\approx 1$.}
+        \item A scatter plot between the two regions with lowest correlation.\\
+            \ans{E, since it is a scatter plot and the correlation is much less visible than in F.}
+    \end{enumerate}
+
+    \blue{Match the plots (labeled A-F) with the descriptions above (labeled 1--6), with an extremely brief (a few words is fine) explanation for each decision.}
+    
+    \section{Decision Trees}
+
+    If you run \texttt{python main.py -q 6}, it will load a dataset containing longitude
+    and latitude data for 400 cities in the US, along with a class label indicating
+    whether they were a ``red" state or a ``blue" state in the 2012
+    election.\footnote{The cities data was sampled from \url{http://simplemaps.com/static/demos/resources/us-cities/cities.csv}. The election information was collected from Wikipedia.}
+    Specifically, the first column of the variable $X$ contains the
+    longitude and the second variable contains the latitude,
+    while the variable $y$ is set to $0$ for blue states and $1$ for red states.
+    After it loads the data, it plots the data and then fits two simple
+    classifiers: a classifier that always predicts the
+    most common label ($0$ in this case) and a decision stump
+    that discretizes the features (by rounding to the nearest integer)
+    and then finds the best equality-based rule (i.e., check
+    if a feature is equal to some value).
+    It reports the training error with these two classifiers, then plots the decision areas made by the decision stump.
+    The plot is shown below:
+
+    \centerfig{0.7}{../figs/q6_decisionBoundary}
+
+    As you can see, it is just checking whether the latitude equals 35 and, if so, predicting red (Republican).
+    This is not a very good classifier.
+
+    \subsection{Splitting rule}
+    \rubric{1}
+
+    Is there a particular type of features for which it makes sense to use an equality-based splitting rule rather than the threshold-based splits we discussed in class? \ans{Yes, categorical features.}
+
+
+    \subsection{Decision Stump Implementation}
+    \rubric{3}
+
+    The file \texttt{decision\string_stump.py} contains the class \texttt{DecisionStumpEquality} which
+    finds the best decision stump using the equality rule and then makes predictions using that
+    rule. Instead of discretizing the data and using a rule based on testing an equality for
+    a single feature, we want to check whether a feature is above or below a threshold and
+    split the data accordingly (this is a more sane approach, which we discussed in class).
+    \blue{Create a \texttt{DecisionStumpErrorRate} class to do this, and report the updated error you
+        obtain by using inequalities instead of discretizing and testing equality.
+        Submit your class definition code following the procedure in the assignment submission instructions.
+        Also submit the generated figure of the classification boundary.}
+
+    Hint: you may want to start by copy/pasting the contents \texttt{DecisionStumpEquality} and then make modifications from there.\\
+    \ans{Classification error is 0.265.}
+
+    \begin{python}
+class DecisionStumpErrorRate:
+    y_hat_yes = None
+    y_hat_no = None
+    j_best = None
+    t_best = None
+
+    def fit(self, X, y):
+        n, d = X.shape
+        count = np.bincount(y, minlength=2)
+        y_mode = np.argmax(count)
+        if np.unique(y).size <= 1:
+            self.y_hat_yes = y_mode
+            self.y_hat_no = None
+            self.j_best = None
+            self.t_best = None
+            return
+
+        minError = np.sum(y != y_mode)
+        X = np.round(X)
+
+        for j in range(d):
+            for i in range(n):
+                t = X[i, j]
+
+                y_yes_mode = utils.mode(y[X[:, j] < t])
+                y_no_mode = utils.mode(y[X[:, j] >= t])
+                y_pred = y_yes_mode * np.ones(n)
+                y_pred[X[:, j] >= t] = y_no_mode
+
+                errors = np.sum(y_pred != y)
+                if errors < minError:
+                    minError = errors
+                    self.j_best = j
+                    self.t_best = t
+                    self.y_hat_yes = y_yes_mode
+                    self.y_hat_no = y_no_mode
+
+    def predict(self, X):
+        n, d = X.shape
+        X = np.round(X)
+        if self.j_best is None:
+            return np.full(n, self.y_hat_yes)
+
+        y_hat = np.zeros(n)
+        for i in range(n):
+            if X[i, self.j_best] < self.t_best:
+                y_hat[i] = self.y_hat_yes
+            else:
+                y_hat[i] = self.y_hat_no
+
+        return y_hat
+    \end{python}
+
+    \centerfig{0.7}{../figs/q6_2_decisionBoundary}
+
+
+    \subsection{Decision Stump Info Gain Implementation}
+    \rubric{3}
+
+    In \texttt{decision\string_stump.py}, \blue{create a \texttt{DecisionStumpInfoGain} class that
+        fits using the information gain criterion discussed in lecture.
+        Report the updated error you obtain.
+        Submit your class definition code following the procedure in the assignment submission instructions.
+        Submit the classification boundary figure.}\\
+    \ans{Classification error is 0.328.}
+
+    Notice how the error rate changed. Are you surprised? If so, hang on until the end of this question!
+
+    Note: even though this data set only has 2 classes (red and blue), your implementation should work
+    for any number of classes, just like \texttt{DecisionStumpEquality} and \texttt{DecisionStumpErrorRate}.
+
+    Hint: take a look at the documentation for \texttt{np.bincount}, at \\
+    \url{https://docs.scipy.org/doc/numpy/reference/generated/numpy.bincount.html}.
+    The \texttt{minlength} argument comes in handy here to deal with a tricky corner case:
+    when you consider a split, you might not have any cases of a certain class, like class 1,
+    going to one side of the split. Thus, when you call \texttt{np.bincount}, you'll get
+    a shorter array by default, which is not what you want. Setting \texttt{minlength} to the
+    number of classes solves this problem.
+
+        \begin{python}
+class DecisionStumpInfoGain(DecisionStumpErrorRate):
+    y_hat_yes = None
+    y_hat_no = None
+    j_best = None
+    t_best = None
+
+    def fit(self, X, y):
+        n, d = X.shape
+        count = np.bincount(y, minlength=2)
+        y_mode = np.argmax(count)
+
+        if np.unique(y).size <= 1:
+            self.y_hat_yes = y_mode
+            self.y_hat_no = None
+            self.j_best = None
+            self.t_best = None
+            return
+
+        maxInfoGain = 0
+        X = np.round(X)
+
+        for j in range(d):
+            for i in range(n):
+                t = X[i, j]
+
+                y_yes_mode = utils.mode(y[X[:, j] < t])
+                y_no_mode = utils.mode(y[X[:, j] >= t])
+                y_pred = y_yes_mode * np.ones(n)
+                y_pred[X[:, j] >= t] = y_no_mode
+
+                y_yes = y[X[:, j] < t]
+                y_no = y[X[:, j] >= t]
+                n_yes, n_no = len(y_yes), len(y_no)
+                infoGain = entropy(np.bincount(y) / n) \
+                           - n_yes / n * entropy(np.bincount(y_yes) / n_yes) \
+                           - n_no / n * entropy(np.bincount(y_no) / n_no)
+
+                if maxInfoGain < infoGain:
+                    maxInfoGain = infoGain
+                    self.j_best = j
+                    self.t_best = t
+                    self.y_hat_yes = y_yes_mode
+                    self.y_hat_no = y_no_mode
+    \end{python}
+    \centerfig{0.7}{../figs/q6_3_decisionBoundary}
+
+    \subsection{Hard-coded Decision Trees}
+    \rubric{2}
+
+    Once your \texttt{DecisionStumpInfoGain} class is finished, running \texttt{python main.py -q 6.4} will fit
+    a decision tree of depth~2 to the same dataset (which results in a lower training error).
+    Look at how the decision tree is stored and how the (recursive) \texttt{predict} function works.
+    \blue{Using the splits from the fitted depth-2 decision tree, write a hard-coded version of the \texttt{predict}
+        function that classifies one example using simple if/else statements
+        (see the Decision Trees lecture). Submit this code following the procedure in the assignment submission instructions.}
+
+    Note: this code should implement the specific, fixed decision tree
+    which was learned after calling \texttt{fit} on this particular data set. It does not need to be a learnable model.
+    You should just hard-code the split values directly into the code.
+    Only the \texttt{predict} function is needed.
+
+    Hint: if you plot the decision boundary you can do a visual sanity check to see if your code is consistent with the plot.
+
+    \begin{python}
+def predict(x):  # x is a single example [longitude, latitude] data point
+    if x[1] < 37:
+        if x[0] < -96:
+            return 1
+        else:
+            return 0
+    else:
+        if x[0] < -113:
+            return 0
+        else:
+            return 1
+    \end{python}
+
+
+
+    \subsection{Decision Tree Training Error}
+    \rubric{2}
+
+    Running \texttt{python main.py -q 6.5} fits decision trees of different depths using the following different implementations:
+    \enum{
+        \item A decision tree using \texttt{DecisionStumpErrorRate}
+        \item A decision tree using \texttt{DecisionStumpInfoGain}
+        \item The \texttt{DecisionTreeClassifier} from the popular Python ML library \emph{scikit-learn}
+    }
+
+    % (3) and (3) above use a more sophisticated splitting criterion called the information gain, instead of just the classification accuracy.
+    Run the code and look at the figure.
+    \blue{Describe what you observe. Can you explain the results?} Why is approach (1) so disappointing? Also, \blue{submit a classification boundary plot of the model with the lowest training error}.
+
+    Note: we set the \verb|random_state| because sklearn's \texttt{DecisionTreeClassifier} is non-deterministic. This is probably
+    because it breaks ties randomly.
+
+    Note: the code also prints out the amount of time spent. You'll notice that sklearn's implementation is substantially faster. This is because
+    our implementation is based on the $O(n^2 d)$ decision stump learning algorithm and sklearn's implementation presumably uses the faster $O(nd\log n)$
+    decision stump learning algorithm that we discussed in lecture.
+
+    \ans{The classification error rates decrease as model complexity (i.e. maximum depth) is increased in all cases. Since we are evaluating the models on the training data, the error rates do not punish over-fitting and so continue decreasing (despite the intermediate ``dip" in error rate we saw in class). \\
+    The info gain approach performs better than the accuracy error rate, simply due to the way error rate is calculated in the training process. And sklearn's model performs significantly better than both other approaches. But again, if we were to test on unseen data, the results would be very different.}
+
+    \centerfig{0.7}{../figs/q6_5_tree_errors}
+    \centerfig{0.7}{../figs/q6_5_decisionBoundary}
+
+
+    \subsection{Comparing implementations}
+    \rubric{2}
+
+    In the previous section you compared different implementations of a machine learning algorithm. Let's say that two
+    approaches produce the exact same curve of classification error rate vs. tree depth. Does this conclusively demonstrate
+    that the two implementations are the same? If so, why? If not, what other experiment might you perform to build confidence
+    that the implementations are probably equivalent?\\
+    \ans{Most likely yes, but not necessarily. It could be the case that the two models treat all the examples in the test data the same, but on some new data point predict different values. The more data the two models agree on, the more likely they are equivalent. So just test on more data!}
+\end{document}
